@@ -56,7 +56,8 @@ def create_dir():
                 "card_holder_name": "",
                 "card_expiry_month": "",
                 "card_expiry_year": "",
-                "security_code": ""
+                "security_code": "",
+                "max_price": "",
             }
             json.dump(config, f, indent=4)
 

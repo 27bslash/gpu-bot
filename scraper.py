@@ -6,11 +6,12 @@ import requests
 import traceback
 import logging
 from logs import configure_log
+import json
 
 
-def parse_currys(URL,text):
+def parse_currys(URL, text):
     checkout_log = logging.getLogger('checkout')
-    
+
     start = time.perf_counter()
     soup = BeautifulSoup(text, 'html.parser')
     search_result = soup.find('div', {'data-component': 'product-list-view'})
@@ -21,19 +22,23 @@ def parse_currys(URL,text):
             brand = item.find('span', {'data-product': "brand"}).text
             price_parent = item.find('div', 'amounts')
             try:
-                price = price_parent.find(class_='price')
+                price = price_parent.find(class_='price').text
             except Exception:
                 price = price_parent.find('span').text
-            url = item.find('a')
-            available = item.find(
-                "li", {"data-availability": "homeDeliveryAvailable"})
-            if available and 'PNY' not in brand:
-                currys = Currys(url['href'])
-                currys.main()
-                end = time.perf_counter()
-                checkout_log.info(f"time taken: {end-start}")
-                break
-                # buy gpu
+            with open('user_details/config.json', 'r') as f:
+                price = float(price.strip().replace('£', ''))
+                data = json.load(f)
+                max_price = data['max_price']
+                url = item.find('a')
+                available = item.find(
+                    "li", {"data-availability": "homeDeliveryAvailable"})
+                if available and 'PNY' not in brand and price < max_price:
+                    currys = Currys(url['href'])
+                    # currys.main()
+                    end = time.perf_counter()
+                    checkout_log.info(f"time taken: {end-start}")
+                    break
+                    # buy gpu
         except Exception as e:
             print('not available', '\n', traceback.format_exc())
             checkout_log.error(f"{traceback.format_exc()}")
@@ -50,7 +55,7 @@ class Currys():
             self.user_details = json.load(f)
         self.driver = Browser()
         self.checkout_log = logging.getLogger('checkout')
-        print('log: ',self.checkout_log)
+        print('log: ', self.checkout_log)
 
     def accept_cookies(self):
         self.driver.click(id="onetrust-accept-btn-handler")
@@ -245,6 +250,7 @@ class Currys():
         time.sleep(10)
         self.driver.quit()
 
+
 def random_delay(a, b):
     return uniform(a, b)
 
@@ -254,7 +260,7 @@ if __name__ == "__main__":
     #     'https://www.currys.co.uk/gbuk/search-keywords/xx_xx_30343_xx_ba00013562-bv00314002/3060/1_15/price-asc/xx_xx_xx_xx_0-1-4-7-criteria.html')#
     currys = Currys(
         "https://www.currys.co.uk/gbuk/gaming/gaming-accessories/gaming-mice/steelseries-qck-mini-gaming-surface-11261944-pdt.html")
-    currys.main()
+    # currys.main()
     # random_delay()
     # write_details_to_file()
     # checkout()
