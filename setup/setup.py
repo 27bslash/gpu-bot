@@ -3,6 +3,7 @@ from swinlnk.swinlnk import SWinLnk
 import win32com.client
 import os
 import json
+import sys
 
 shortcut_name = 'scrape.lnk'
 swl = SWinLnk()
@@ -10,20 +11,25 @@ startup = os.path.expandvars(
     r'%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup')
 shortcut_path = f"{startup}\\{shortcut_name}"
 
-# def get_correct_path(relative_path):
-#     import sys
-#     try:
-#         base_path = sys._MEIPASS
-#     except Exception:
-#         base_path = os.path.abspath(".")
 
-#     return os.path.join(base_path, relative_path)
+def get_correct_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    print('argv', sys.argv[0])
+    print('base path', base_path)
+    print('abs path', os.path.abspath('.'))
+    print('ret: ', os.path.join(base_path, relative_path))
+    return os.path.join(base_path, relative_path)
+
 
 def create_shortcut():
-    shortcut_target = pathlib.Path(__file__).parent.parent.absolute()
+    shortcut_target = f"{os.path.abspath('.')}"
+    print('argv sht cut', shortcut_target)
     if not os.path.isfile(shortcut_path):
         # if shortcut does not exist create it in windows startup folder
-        swl.create_lnk(f"{shortcut_target}\main.exe", shortcut_path)
+        swl.create_lnk(sys.argv[0], shortcut_path)
         print('tar:', shortcut_target, 'pth', shortcut_path)
 
 
@@ -33,7 +39,7 @@ def change_working_dir():
         shell = win32com.client.Dispatch("WScript.Shell")
         target = shell.CreateShortcut(shortcut_path).TargetPath
         print('old dir: ', os.getcwd())
-        os.chdir(pathlib.Path(target).parent.parent)
+        os.chdir(pathlib.Path(target).parent)
         print('working dir: ', os.getcwd())
 
 
@@ -62,4 +68,5 @@ def setup():
 
 
 if __name__ == "__main__":
-    create_dir()
+    setup()
+    pass
