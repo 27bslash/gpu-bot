@@ -9,11 +9,48 @@ from logs import configure_log
 import json
 
 
-def parse_currys(URL, text):
-    checkout_log = logging.getLogger('checkout')
+# def parse_currys(URL, text):
+#     checkout_log = logging.getLogger('checkout')
+#     driver = Browser
+#     start = time.perf_counter()
+#     soup = BeautifulSoup(text, 'html.parser')
+#     search_result = soup.find('div', {'data-component': 'product-list-view'})
+#     gpu_divs = search_result.findAll('article')
+#     for item in gpu_divs:
+#         try:
+#             name = item.find('span', {'data-product': "name"}).text
+#             brand = item.find('span', {'data-product': "brand"}).text
+#             price_parent = item.find('div', 'amounts')
+#             try:
+#                 price = price_parent.find(class_='price').text
+#             except Exception:
+#                 price = price_parent.find('span').text
+#             with open('user_details/config.json', 'r') as f:
+#                 price = float(price.strip().replace('£', ''))
+#                 data = json.load(f)
+#                 max_price = data['max_price']
+#                 url = item.find('a')
+#                 available = item.find(
+#                     "li", {"data-availability": "homeDeliveryAvailable"})
+#                 if available and 'PNY' not in brand and price < max_price:
+#                     currys = Currys(url['href'])
+#                     # currys.main()
+#                     end = time.perf_counter()
+#                     checkout_log.info(f"time taken: {end-start}")
+#                     break
+#                     # buy gpu
+#         except Exception as e:
+#             print('not available', '\n', traceback.format_exc())
+#             checkout_log.error(f"{traceback.format_exc()}")
+#             pass
 
+def parse_currys(url, driver):
+    checkout_log = logging.getLogger('checkout')
+    driver.switch_to_tab(1)
+    driver.new_tab(url)
+    driver.switch_to_tab(2)
     start = time.perf_counter()
-    soup = BeautifulSoup(text, 'html.parser')
+    soup = BeautifulSoup(driver.get_page_source(), 'html.parser')
     search_result = soup.find('div', {'data-component': 'product-list-view'})
     gpu_divs = search_result.findAll('article')
     for item in gpu_divs:
@@ -28,32 +65,33 @@ def parse_currys(URL, text):
             with open('user_details/config.json', 'r') as f:
                 price = float(price.strip().replace('£', ''))
                 data = json.load(f)
-                max_price = data['max_price']
+                max_price = float(data['max_price'])
                 url = item.find('a')
                 available = item.find(
                     "li", {"data-availability": "homeDeliveryAvailable"})
                 if available and 'PNY' not in brand and price < max_price:
-                    currys = Currys(url['href'])
-                    # currys.main()
                     end = time.perf_counter()
-                    checkout_log.info(f"time taken: {end-start}")
+                    checkout_log.info(f"products available: {len(available)} time taken: {end - start}")
+                    currys = Currys(url['href'], driver)
+                    currys.main()
                     break
                     # buy gpu
         except Exception as e:
             print('not available', '\n', traceback.format_exc())
             checkout_log.error(f"{traceback.format_exc()}")
             pass
+    if driver.get_total_tabs() > 1:
+        driver.close_current_tab()
 
 
 class Currys():
-    def __init__(self, url):
+    def __init__(self, url, driver):
         self.url = url
         self.product_brought = False
         self.payment_type = 'card'
         with open('user_details/config.json', 'r') as f:
-            import json
             self.user_details = json.load(f)
-        self.driver = Browser()
+        self.driver = driver
         self.checkout_log = logging.getLogger('checkout')
         print('log: ', self.checkout_log)
 
@@ -248,7 +286,7 @@ class Currys():
                 with open('brought_products.txt', 'w') as f:
                     f.write(self.url)
         time.sleep(10)
-        self.driver.quit()
+        self.driver.close_current_tab()
 
 
 def random_delay(a, b):
@@ -256,10 +294,9 @@ def random_delay(a, b):
 
 
 if __name__ == "__main__":
+    parse_currys('https://www.currys.co.uk/gbuk/search-keywords/xx_xx_30343_xx_ba00013562-bv00314002/3060/1_15/price-asc/xx_xx_xx_xx_0-1-4-7-criteria.html', Browser())
     # parse_currys(
     #     'https://www.currys.co.uk/gbuk/search-keywords/xx_xx_30343_xx_ba00013562-bv00314002/3060/1_15/price-asc/xx_xx_xx_xx_0-1-4-7-criteria.html')#
-    currys = Currys(
-        "https://www.currys.co.uk/gbuk/gaming/gaming-accessories/gaming-mice/steelseries-qck-mini-gaming-surface-11261944-pdt.html")
     # currys.main()
     # random_delay()
     # write_details_to_file()
