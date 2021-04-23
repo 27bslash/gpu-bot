@@ -62,38 +62,38 @@ if debug:
 
 def parse_stock_informer():
     scrape_log = logging.getLogger('scrape')
-    shutdown()
     file = Path('brought_products.txt')
     if file.is_file():
         scrape_log.warning('PRODUCT BROUGHT STOPPING SCRAPING')
         return
-    driver = Browser()
-    driver.go_to(
-        'https://www.stockinformer.co.uk/checker-nvidia-geforce-rtx-3080-3070-3090')
     soup = BeautifulSoup(driver.get_page_source(), 'html.parser')
     title = soup.findAll('td', text=re.compile("3060"))
-
     if len(title) == 0:
         scrape_log.error('cannot get stock checker')
         print('whoops')
-    while True:
-        for i in title:
-            if 'Ti' in i.text:
-                continue
-            wrapper = i.parent.parent
-            rows = wrapper.findAll('tr')
-            for row in rows:
-                try:
-                    seller = row.find('img')['alt']
-                    if seller == 'Currys':
-                        cells = row.findAll(
-                            'span', text=re.compile('In Stock'))
-                        if len(cells) > 0:
-                            scrape_log.info(f"{seller} stock found")
-                            parse_currys(URL, driver)
-                except:
-                    pass
-        time.sleep(10)
+    if file.is_file():
+        scrape_log.warning('PRODUCT BROUGHT STOPPING SCRAPING')
+        return
+    for i in title:
+        if 'Ti' in i.text:
+            continue
+        wrapper = i.parent.parent
+        rows = wrapper.findAll('tr')
+        for row in rows:
+            try:
+                img = row.find('img')
+                seller = None if img == None else row.find('img')['alt']
+                if seller == 'Currys':
+                    cells = row.findAll(
+                        'span', text=re.compile('In Stock'))
+                    if len(cells) > 0:
+                        scrape_log.info(f"{seller} stock found")
+                        parse_currys(URL, driver)
+            except Exception as e:
+                import traceback
+                print(traceback.format_exc())
+                pass
+    print(f'Heartbeat: {driver.get_current_url()}')
 
 
 if __name__ == '__main__':
@@ -106,8 +106,12 @@ if __name__ == '__main__':
     try:
         file = Path('brought_products.txt')
         if not file.is_file():
+            driver = Browser()
+            driver.go_to(
+                'https://www.stockinformer.co.uk/checker-nvidia-geforce-rtx-3080-3070-3090')
             scrape_log.warning('Starting Gpu scraping')
-            print('main')
-            parse_stock_informer()
+            while True:
+                parse_stock_informer()
+                time.sleep(10)
     except Exception as e:
         print(e, e.__class__)
