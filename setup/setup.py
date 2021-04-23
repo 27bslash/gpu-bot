@@ -26,11 +26,9 @@ def get_correct_path(relative_path):
 
 def create_shortcut():
     shortcut_target = f"{os.path.abspath('.')}"
-    print('argv sht cut', shortcut_target)
     if not os.path.isfile(shortcut_path):
         # if shortcut does not exist create it in windows startup folder
         swl.create_lnk(sys.argv[0], shortcut_path)
-        print('tar:', shortcut_target, 'pth', shortcut_path)
 
 
 def change_working_dir():
@@ -38,7 +36,6 @@ def change_working_dir():
         # if shortcut exists change working directory to shortcut target
         shell = win32com.client.Dispatch("WScript.Shell")
         target = shell.CreateShortcut(shortcut_path).TargetPath
-        print('old dir: ', os.getcwd())
         os.chdir(pathlib.Path(target).parent)
         print('working dir: ', os.getcwd())
 
