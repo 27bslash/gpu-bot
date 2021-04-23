@@ -71,7 +71,8 @@ def parse_currys(url, driver):
                     "li", {"data-availability": "homeDeliveryAvailable"})
                 if available and 'PNY' not in brand and price < max_price:
                     end = time.perf_counter()
-                    checkout_log.info(f"products available: {len(available)} time taken: {end - start}")
+                    checkout_log.info(
+                        f"products available: {len(available)} time taken: {end - start}")
                     currys = Currys(url['href'], driver)
                     currys.main()
                     break
@@ -258,17 +259,24 @@ class Currys():
         self.login()
         if len(self.driver.errors) > 0:
             self.checkout_log.error(f"login errors: {self.driver.errors}")
+            self.driver.close_current_tab()
+            return
         else:
             self.checkout_log.info('logged in')
             self.add_to_basket()
         if len(self.driver.errors) > 0:
             self.checkout_log.error(
                 f"add to basket errors: {self.driver.errors}")
+            self.driver.close_current_tab()
+            return
+
         else:
             self.checkout_log.info('product added to basket')
             self.checkout()
         if len(self.driver.errors) > 0:
             self.checkout_log.error(f"checkout errors: {self.driver.errors}")
+            self.driver.close_current_tab()
+            return
         else:
             self.checkout_log.info('product checked out')
             if self.payment_type == 'paypal':
@@ -280,12 +288,12 @@ class Currys():
                 if len(self.driver.errors) > 0:
                     self.checkout_log.error(
                         f"card checkout errors: {self.driver.errors}")
-                pass
+                    self.driver.close_current_tab()
+                    return
             if self.product_brought:
                 self.checkout_log.info(f"product brought {self.url}")
                 with open('brought_products.txt', 'w') as f:
                     f.write(self.url)
-        time.sleep(10)
         self.driver.close_current_tab()
 
 
